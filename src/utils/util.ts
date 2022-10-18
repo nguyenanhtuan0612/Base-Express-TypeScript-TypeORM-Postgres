@@ -1,3 +1,11 @@
+import { plainToClass } from 'class-transformer';
+import {
+    validate,
+    ValidationArguments,
+    ValidationError,
+    ValidatorConstraint,
+    ValidatorConstraintInterface,
+} from 'class-validator';
 /**
  * @method isEmpty
  * @param {String | Number | Object} value
@@ -21,3 +29,44 @@ export const isEmpty = (value: string | number | object): boolean => {
         return false;
     }
 };
+
+export const validation = async (
+    type: any,
+    value: string | number | object,
+    skipMissingProperties = false,
+    whitelist = true,
+    forbidNonWhitelisted = true,
+): Promise<{ valid: boolean; message: string }> => {
+    return validate(plainToClass(type, value), {
+        skipMissingProperties,
+        whitelist,
+        forbidNonWhitelisted,
+    }).then((errors: ValidationError[]) => {
+        if (errors.length > 0) {
+            const message = errors
+                .map((error: ValidationError) =>
+                    Object.values(error.constraints),
+                )
+                .join(', ');
+
+            return { valid: false, message };
+        } else {
+            return { valid: true, message: 'null' };
+        }
+    });
+};
+
+@ValidatorConstraint({ name: 'string-or-number', async: false })
+export class IsValueFilter implements ValidatorConstraintInterface {
+    validate(data: any) {
+        return (
+            typeof data === 'number' ||
+            typeof data === 'string' ||
+            Array.isArray(data)
+        );
+    }
+
+    defaultMessage() {
+        return '($value) must be number, string or array';
+    }
+}

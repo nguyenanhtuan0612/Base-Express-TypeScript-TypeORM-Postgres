@@ -6,4 +6,7 @@ export class CreateTypeQuestionDto {
 
     @IsString()
     public name: string;
+
+    @IsString()
+    public package: string;
 }
